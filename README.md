@@ -1,5 +1,5 @@
-# Torque-Bounded Admittance Control WithImplicit Euler Realization of Set-Valued
-Operators
+# Torque-Bounded Admittance Control With Implicit Euler Realization of Set-Valued Operators
+
 This repository accompanies the paper "Torque-Bounded Admittance Control With Implicit Euler Realization of Set-Valued Operators". 
 
 

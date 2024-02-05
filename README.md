@@ -1,14 +1,11 @@
-# Torque-Bounded Admittance Control With
-Implicit Euler Realization of Set-Valued
+# Torque-Bounded Admittance Control WithImplicit Euler Realization of Set-Valued
 Operators
-
-This repository accompanies the paper "Torque-Bounded Admittance Control With
-Implicit Euler Realization of Set-Valued Operators". 
+This repository accompanies the paper "Torque-Bounded Admittance Control With Implicit Euler Realization of Set-Valued Operators". 
 
 
 ## Reproducing results
 
-Test results can be produced by running  `Two_DoFs_position_control`. 
+The simulation results can be produced by running  `Two_DoFs_position_control`. 
 
 
 ## References

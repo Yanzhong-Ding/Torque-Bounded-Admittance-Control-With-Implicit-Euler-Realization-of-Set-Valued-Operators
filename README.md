@@ -5,7 +5,7 @@ This repository accompanies the paper "Torque-Bounded Admittance Control With Im
 
 ## Reproducing results
 
-The simulation results can be produced by running  `Two_DoFs_position_control`. 
+The simulation results can be produced by running  `Two_DoFs_position_control.m`. 
 
 
 ## References

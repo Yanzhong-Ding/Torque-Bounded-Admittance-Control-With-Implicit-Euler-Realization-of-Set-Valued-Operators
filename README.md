@@ -9,5 +9,5 @@ The simulation results can be produced by running  `Two_DoFs_position_control.m`
 
 
 ## References
-[1] X. Yuan, Y. Ding, X. Xiong and Y. Lou, "Torque-Bounded Admittance Control With Implicit Euler Realization of Set-Valued Operators," in IEEE/ASME Transactions on Mechatronics, doi: 10.1109/TMECH.2023.3342479. 
+[1] Y. Ding, X. Yuan, X. Xiong and Y. Lou, "Torque-Bounded Admittance Control With Implicit Euler Realization of Set-Valued Operators," in IEEE/ASME Transactions on Mechatronics, doi: 10.1109/TMECH.2023.3342479. 
 

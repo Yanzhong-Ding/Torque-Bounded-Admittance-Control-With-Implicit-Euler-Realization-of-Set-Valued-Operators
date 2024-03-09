@@ -2,7 +2,7 @@ close all;
 clear;
 clc;
 tic;
-%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%% 运动模型与论文中相同
 % m1=1;m2=1.5;
 % L1=0.2;L2=0.3;
 % Lc1=0.1;Lc2=0.15;
@@ -184,7 +184,7 @@ end
 % tao=J'*(15*(d_X0-d_X)+100*(X0-X));
 % tao=[project([-F,F],tao(1)) project([-F,F],tao(2))]';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 常规位置控制算法 002   关节空间-常规      C_1 AdmC
+%% 常规位置控制算法 算法1     AdmC
 % J0=[-L1*sin(q0(1))-L2*sin(q0(1)+q0(2)) -L2*sin(q0(1)+q0(2));L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L2*cos(q0(1)+q0(2))];
 % d_J0=[-L1*cos(q0(1))*d_q0(1)-L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))
 %       -L1*sin(q0(1))*d_q0(1)-L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))];
@@ -201,127 +201,61 @@ end
 % 
 % data_sets(1:2,i)=B*(d_qx-d_q); data_sets(4:5,i)=M*d_d_qx;
 % data_sets(1:2,i)=K*(qx-q); data_sets(4:5,i)=L*aa(:,i);
-
-%隐式离散
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 基于微分包含的位控算法 算法2        AdmDIC
 % J0=[-L1*sin(q0(1))-L2*sin(q0(1)+q0(2)) -L2*sin(q0(1)+q0(2));L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L2*cos(q0(1)+q0(2))];
 % d_J0=[-L1*cos(q0(1))*d_q0(1)-L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))
 %       -L1*sin(q0(1))*d_q0(1)-L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))];
 % d_d_q0=(inv(J0))*(d_d_X0-d_J0*d_q0);d_q0=(inv(J0))*d_X0;q0=q0+T*d_q0; 
-% % d_d_qx=(inv(M_da))*(-D_da*(d_qx-d_q0)-K_da*(qx-q0)+J'*F_ext)+d_d_q0;
-% % d_qx=d_qx+T*d_d_qx;qx=qx+T*d_qx;
-% qx=(inv(M_da/T^2+D_da/T+K_da))*(M_da/T^2*(2*data_qx(:,i)-data_qx(:,i-1))+D_da/T*(data_qx(:,i))+M_da*d_d_q0+D_da*d_q0+K_da*q0+J'*F_ext);
-% aa(:,i)=aa(:,i-1)+T*(qx-q);
-% tao_star=M/T^2*(qx-2*data_qx(:,i)+data_qx(:,i-1))+B*((qx-data_qx(:,i))/T-(q-data_q(:,i-1))/T)+K*(qx-q)+L*aa(:,i);
+% u_x_star(:,i)=(inv(M_da+D_da*T))*(M_da*u_x(:,i-1)+T*(M_da*d_d_q0+D_da*d_q0+K_da*q0+J'*F_ext));
+% % u_x_star(:,i)=(inv(M_da+D_da*T))*(M_da*u_x(:,i-1)+T*(M_da*d_d_q0+D_da*d_q0+K_da*q0+J'*[0 F_ext(2)]'));
+% q_x_star=data_qx(:,i)+T*u_x_star(:,i);
+% fai_b=B*(data_qx(:,i)-data_q(:,i-1))/T-L*aa(:,i-1);
+% fai_a=M*(data_q(:,i)-data_qx(:,i)-T*u_x(:,i-1))/(T*T);
+% q_star=data_q(:,i)+(inv(K_hat+M/(T*T)))*(fai_b-fai_a); 
+% tao_star=Mat2*((inv(Mat1))*q_x_star-q_star);
+% % tao_star=Mat2*((inv(Mat1))*q_x_star-q_star) - J'*F_ext;
+% 
 % % data_tao_star(:,i)=tao_star;
 % tao=[project([-F,F],tao_star(1)) project([-F,F],tao_star(2))]';
+% qx=q_star+(inv(K_hat+M/(T*T)))*tao;
+% u_x(:,i)=(qx-data_qx(:,i))/T;
+% aa(:,i)=aa(:,i-1)+T*(qx-data_q(:,i));
+% 
 % Xd=[L1*cos(qx(1))+L2*cos(qx(1)+qx(2)) L1*sin(qx(1))+L2*sin(qx(1)+qx(2))]';
 % data_q0_to_X0(:,i)=[L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L1*sin(q0(1))+L2*sin(q0(1)+q0(2))]';
 % data_torque_ext(:,i)=J'*F_ext;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 基于微分包含的位控算法 003    关节空间(先将proxy转换为关节空间)       C_2    AdmDIC
+% 
+%% 基于微分包含的位置滑模控制(双集值)  算法3 用Lambda_1和Lambda_2两个参数 lambda_1=(inv(E+T*Lambda1)); lambda_2=(inv(E+T*Lambda2)); AdmDISMC
+AA=lambda_1*h_s*h*(F-F0); BB=lambda_1*h_s*h*(F+F0);
 J0=[-L1*sin(q0(1))-L2*sin(q0(1)+q0(2)) -L2*sin(q0(1)+q0(2));L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L2*cos(q0(1)+q0(2))];
 d_J0=[-L1*cos(q0(1))*d_q0(1)-L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))
       -L1*sin(q0(1))*d_q0(1)-L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))];
 d_d_q0=(inv(J0))*(d_d_X0-d_J0*d_q0);d_q0=(inv(J0))*d_X0;q0=q0+T*d_q0; 
-u_x_star(:,i)=(inv(M_da+D_da*T))*(M_da*u_x(:,i-1)+T*(M_da*d_d_q0+D_da*d_q0+K_da*q0+J'*F_ext));
-% u_x_star(:,i)=(inv(M_da+D_da*T))*(M_da*u_x(:,i-1)+T*(M_da*d_d_q0+D_da*d_q0+K_da*q0+J'*[0 F_ext(2)]'));
-q_x_star=data_qx(:,i)+T*u_x_star(:,i);
-fai_b=B*(data_qx(:,i)-data_q(:,i-1))/T-L*aa(:,i-1);
-fai_a=M*(data_q(:,i)-data_qx(:,i)-T*u_x(:,i-1))/(T*T);
-q_star=data_q(:,i)+(inv(K_hat+M/(T*T)))*(fai_b-fai_a); 
-tao_star=Mat2*((inv(Mat1))*q_x_star-q_star);
-% tao_star=Mat2*((inv(Mat1))*q_x_star-q_star) - J'*F_ext;
-
-% data_tao_star(:,i)=tao_star;
-tao=[project([-F,F],tao_star(1)) project([-F,F],tao_star(2))]';
-qx=q_star+(inv(K_hat+M/(T*T)))*tao;
-u_x(:,i)=(qx-data_qx(:,i))/T;
-aa(:,i)=aa(:,i-1)+T*(qx-data_q(:,i));
+tau_ext=J'*F_ext;    set_1=-tau_ext-(M_x*d_d_q0+D_x*d_q0+K_x*q0);
+q1=lambda_1*(qx+h*Lambda1*data_q(:,i)+h_s*M_s*e_r(:,i-1)+h_s*h*f_e_hat);
+q2=h_x_star*qx+h_x_star*h_x*(M_x*v_x(:,i-1)-h*set_1);
+q3=data_q(:,i)+lambda_2*e_q(:,i-1);
+S0(:,1)=[project([-BB(1,1),-AA(1,1)],q3(1)-q1(1)) project([-BB(2,2),-AA(2,2)],q3(2)-q1(2))]';
+S0(:,2)=[project([AA(1,1),BB(1,1)],q3(1)-q1(1)) project([AA(2,2),BB(2,2)],q3(2)-q1(2))]';
+qx=q1+[project([S0(1,1),S0(1,2)],q2(1)-q1(1)) project([S0(2,1) S0(2,2)],q2(2)-q1(2))]';
+q4=data_q(:,i-1)+h_s*M_s*data_d_q(:,i-1)+h_s*h*(tau_ext+f_e_hat);
+% q4=data_q(:,i-1)+h_s*M_s*data_d_q(:,i-1)+h_s*h*(-tau_ext*0+f_e_hat);
+q5=(inv(h_s*h))*(qx-lambda_2*e_q(:,i-1)-q4);
+q6=(inv(lambda_1*h_s*h))*(qx-q1);
+% data_q7(:,i)=q7;data_q7_star(:,i)=(h*lambda_h*lambda*q4-q5)/h;
+tao_star=q5-q6;
+tao=q6+[project([-F0,F0],tao_star(1)) project([-F0,F0],tao_star(2))]';
+v_x(:,i)=(qx-data_qx(:,i))/h;
+e_q(:,i)=qx-data_q(:,i);
+e_r(:,i)=v_x(:,i)+Lambda1*e_q(:,i);
 
 Xd=[L1*cos(qx(1))+L2*cos(qx(1)+qx(2)) L1*sin(qx(1))+L2*sin(qx(1)+qx(2))]';
 data_q0_to_X0(:,i)=[L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L1*sin(q0(1))+L2*sin(q0(1)+q0(2))]';
 data_torque_ext(:,i)=J'*F_ext;
-% 
-% data_sets(1:2,i)=M_da*(((u_x(:,i)-u_x(:,i-1))/T)-d_d_q0)+D_da*((u_x(:,i)-d_q0))+K_da*(qx-q0)-J'*F_ext;
-% data_sets(4:5,i)=tao-(M*((u_x(:,i)-u_x(:,i-1))/T)+K*(qx-data_q(:,i))+B*(u_x(:,i)-data_d_q(:,i))+L*aa(:,i));
-% data_sets(1:2,i)=B*(u_x(:,i)-data_d_q(:,i)); data_sets(4:5,i)=M*(u_x(:,i)-u_x(:,i-1))/T;
-% data_sets(1:2,i)=K*(qx-data_q(:,i)); data_sets(4:5,i)=L*aa(:,i);
-
-data_normal_cone(:,i)=M_da*(((u_x(:,i)-u_x(:,i-1))/T)-d_d_q0)+D_da*((u_x(:,i)-d_q0))+K_da*(qx-q0)-J'*F_ext;
-data_normal_cone_flag(:,i) = [map_flag_NC(data_normal_cone(1,i), 1e-5) map_flag_NC(data_normal_cone(2,i), 1e-5)]';
-%% 基于微分包含的位置滑模控制(双集值)  004 用Lambda_1和Lambda_2两个参数 lambda_1=(inv(E+T*Lambda1)); lambda_2=(inv(E+T*Lambda2)); AdmDISMC
-% AA=lambda_1*h_s*h*(F-F0); BB=lambda_1*h_s*h*(F+F0);
-% J0=[-L1*sin(q0(1))-L2*sin(q0(1)+q0(2)) -L2*sin(q0(1)+q0(2));L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L2*cos(q0(1)+q0(2))];
-% d_J0=[-L1*cos(q0(1))*d_q0(1)-L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))
-%       -L1*sin(q0(1))*d_q0(1)-L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))];
-% d_d_q0=(inv(J0))*(d_d_X0-d_J0*d_q0);d_q0=(inv(J0))*d_X0;q0=q0+T*d_q0; 
-% tau_ext=J'*F_ext;    set_1=-tau_ext-(M_x*d_d_q0+D_x*d_q0+K_x*q0);
-% q1=lambda_1*(qx+h*Lambda1*data_q(:,i)+h_s*M_s*e_r(:,i-1)+h_s*h*f_e_hat);
-% q2=h_x_star*qx+h_x_star*h_x*(M_x*v_x(:,i-1)-h*set_1);
-% q3=data_q(:,i)+lambda_2*e_q(:,i-1);
-% S0(:,1)=[project([-BB(1,1),-AA(1,1)],q3(1)-q1(1)) project([-BB(2,2),-AA(2,2)],q3(2)-q1(2))]';
-% S0(:,2)=[project([AA(1,1),BB(1,1)],q3(1)-q1(1)) project([AA(2,2),BB(2,2)],q3(2)-q1(2))]';
-% qx=q1+[project([S0(1,1),S0(1,2)],q2(1)-q1(1)) project([S0(2,1) S0(2,2)],q2(2)-q1(2))]';
-% q4=data_q(:,i-1)+h_s*M_s*data_d_q(:,i-1)+h_s*h*(tau_ext+f_e_hat);
-% % q4=data_q(:,i-1)+h_s*M_s*data_d_q(:,i-1)+h_s*h*(-tau_ext*0+f_e_hat);
-% q5=(inv(h_s*h))*(qx-lambda_2*e_q(:,i-1)-q4);
-% q6=(inv(lambda_1*h_s*h))*(qx-q1);
-% % data_q7(:,i)=q7;data_q7_star(:,i)=(h*lambda_h*lambda*q4-q5)/h;
-% tao_star=q5-q6;
-% tao=q6+[project([-F0,F0],tao_star(1)) project([-F0,F0],tao_star(2))]';
-% v_x(:,i)=(qx-data_qx(:,i))/h;
-% e_q(:,i)=qx-data_q(:,i);
-% e_r(:,i)=v_x(:,i)+Lambda1*e_q(:,i);
-% 
-% Xd=[L1*cos(qx(1))+L2*cos(qx(1)+qx(2)) L1*sin(qx(1))+L2*sin(qx(1)+qx(2))]';
-% data_q0_to_X0(:,i)=[L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L1*sin(q0(1))+L2*sin(q0(1)+q0(2))]';
-% data_torque_ext(:,i)=J'*F_ext;
-% % % % % 
-% data_normal_cone(:,i)=M_da*(((v_x(:,i)-v_x(:,i-1))/T)-d_d_q0)+D_da*((v_x(:,i)-d_q0))+K_da*(qx-q0)-J'*F_ext;
-% data_normal_cone_flag(:,i) = [map_flag_NC(data_normal_cone(1,i), 1e-5) map_flag_NC(data_normal_cone(2,i), 1e-5)]';
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AdmDISMCPro
-% % % f_e_hat = J'*F_ext;
-% % % 
-
-% AA=lambda_1*h_s*h*(F-F0); BB=lambda_1*h_s*h*(F+F0);
-% J0=[-L1*sin(q0(1))-L2*sin(q0(1)+q0(2)) -L2*sin(q0(1)+q0(2));L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L2*cos(q0(1)+q0(2))];
-% d_J0=[-L1*cos(q0(1))*d_q0(1)-L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*cos(q0(1)+q0(2))*(d_q0(1)+d_q0(2))
-%       -L1*sin(q0(1))*d_q0(1)-L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))  -L2*sin(q0(1)+q0(2))*(d_q0(1)+d_q0(2))];
-% d_d_q0=(inv(J0))*(d_d_X0-d_J0*d_q0);d_q0=(inv(J0))*d_X0;q0=q0+T*d_q0; 
-% tau_ext=J'*F_ext;    set_1=-tau_ext-(M_x*d_d_q0+D_x*d_q0+K_x*q0);
-% q1=lambda_1*(qx+h*Lambda1*data_q(:,i)+h_s*M_s*e_r(:,i-1)+h_s*h*f_e_hat);
-% q2=h_x_star*qx+h_x_star*h_x*(M_x*v_x(:,i-1)-h*set_1);
-% q3=data_q(:,i)+lambda_2*e_q(:,i-1);
-% S0(:,1)=[project([-BB(1,1),-AA(1,1)],q3(1)-q1(1)) project([-BB(2,2),-AA(2,2)],q3(2)-q1(2))]';
-% S0(:,2)=[project([AA(1,1),BB(1,1)],q3(1)-q1(1)) project([AA(2,2),BB(2,2)],q3(2)-q1(2))]';
-% qx=q1+[project([S0(1,1),S0(1,2)],q2(1)-q1(1)) project([S0(2,1) S0(2,2)],q2(2)-q1(2))]';
-% 
-% % % M_q_hat=0.2*[1 0;0 1]; C_q_hat=[10 0;0 10];
-% % % M_s=0.2*[1 0;0 1];  D_s=10*[1 0;0 1]; 
-% % M_q_hat=0.5*[1 0;0 1]; C_q_hat=0*[10 0;0 10];
-% % 
-% % h_q=h*(inv(M_q_hat+h*C_q_hat));
-% q4=data_q(:,i-1)+h_q*M_q_hat*data_d_q(:,i-1)+h_q*h*(tau_ext+f_e_hat);
-% % q4=data_q(:,i-1)+h_s*M_s*data_d_q(:,i-1)+h_s*h*(tau_ext+f_e_hat);
-% 
-% % q5=(inv(h_s*h))*(qx-lambda_2*e_q(:,i-1)-q4);
-% q5=(inv(h_q*h))*(qx-lambda_2*e_q(:,i-1)-q4);
-% q6=(inv(lambda_1*h_s*h))*(qx-q1);
-% % data_q7(:,i)=q7;data_q7_star(:,i)=(h*lambda_h*lambda*q4-q5)/h;
-% tao_star=q5-q6;
-% tao=q6+[project([-F0,F0],tao_star(1)) project([-F0,F0],tao_star(2))]';
-% % tao=[project([-F F],tao(1)) project([-F F],tao(2))]';
-% v_x(:,i)=(qx-data_qx(:,i))/h;
-% e_q(:,i)=qx-data_q(:,i);
-% e_r(:,i)=v_x(:,i)+Lambda1*e_q(:,i);
-% 
-% Xd=[L1*cos(qx(1))+L2*cos(qx(1)+qx(2)) L1*sin(qx(1))+L2*sin(qx(1)+qx(2))]';
-% data_q0_to_X0(:,i)=[L1*cos(q0(1))+L2*cos(q0(1)+q0(2)) L1*sin(q0(1))+L2*sin(q0(1)+q0(2))]';
-% data_torque_ext(:,i)=J'*F_ext;
-% % 
-% data_normal_cone(:,i)=M_da*(((v_x(:,i)-v_x(:,i-1))/T)-d_d_q0)+D_da*((v_x(:,i)-d_q0))+K_da*(qx-q0)-J'*F_ext;
-% data_normal_cone_flag(:,i) = [map_flag_NC(data_normal_cone(1,i), 1e-5) map_flag_NC(data_normal_cone(2,i), 1e-5)]';
+% % % % 
+data_normal_cone(:,i)=M_da*(((v_x(:,i)-v_x(:,i-1))/T)-d_d_q0)+D_da*((v_x(:,i)-d_q0))+K_da*(qx-q0)-J'*F_ext;
+%
 %% 力矩作用于二维系统
 % C_q=C_q+0.3*[1 0;0 1];
 % tau_fric=-0*[sign(d_q(1)) sign(d_q(2))]';
